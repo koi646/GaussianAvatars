@@ -87,7 +87,7 @@ class FlameGaussianModel(GaussianModel):
             # NOTE: not sure when this happens
             import ipdb; ipdb.set_trace()
             pass
-    
+    # 通过flame_param的参数来生成mesh数据
     def update_mesh_by_param_dict(self, flame_param):
         if 'shape' in flame_param:
             shape = flame_param['shape']
@@ -114,10 +114,11 @@ class FlameGaussianModel(GaussianModel):
         )
         self.update_mesh_properties(verts, verts_cano)
 
+    # 根据时间序列拿到mesh数据
     def select_mesh_by_timestep(self, timestep, original=False):
         self.timestep = timestep
         flame_param = self.flame_param_orig if original and self.flame_param_orig != None else self.flame_param
-
+        # 通过flame_param的参数来生成mesh数据
         verts, verts_cano = self.flame_model(
             flame_param['shape'][None, ...],
             flame_param['expr'][[timestep]],
@@ -133,7 +134,7 @@ class FlameGaussianModel(GaussianModel):
             dynamic_offset=flame_param['dynamic_offset'][[timestep]],
         )
         self.update_mesh_properties(verts, verts_cano)
-    
+    # todo 重中之重！！！！！！！！！
     def update_mesh_properties(self, verts, verts_cano):
         faces = self.flame_model.faces
         triangles = verts[:, faces]
@@ -153,11 +154,12 @@ class FlameGaussianModel(GaussianModel):
         # for mesh regularization
         self.verts_cano = verts_cano
     
+    # ignore
     def compute_dynamic_offset_loss(self):
         # loss_dynamic = (self.flame_param['dynamic_offset'][[self.timestep]] - self.flame_param_orig['dynamic_offset'][[self.timestep]]).norm(dim=-1)
         loss_dynamic = self.flame_param['dynamic_offset'][[self.timestep]].norm(dim=-1)
         return loss_dynamic.mean()
-    
+    # ignore
     def compute_laplacian_loss(self):
         # offset = self.flame_param['static_offset'] + self.flame_param['dynamic_offset'][[self.timestep]]
         offset = self.flame_param['dynamic_offset'][[self.timestep]]
@@ -171,6 +173,7 @@ class FlameGaussianModel(GaussianModel):
         diff = diff.sum(dim=-1, keepdim=True)
         return diff.mean()
     
+    # ignore
     def training_setup(self, training_args):
         super().training_setup(training_args)
 
@@ -216,6 +219,7 @@ class FlameGaussianModel(GaussianModel):
         # param_dynamic_offset = {'params': [self.flame_param['dynamic_offset']], 'lr': 1.6e-6, "name": "dynamic_offset"}
         # self.optimizer.add_param_group(param_dynamic_offset)
 
+    # todo 增加导出obj文件的功能 
     def save_ply(self, path):
         super().save_ply(path)
 
@@ -235,7 +239,7 @@ class FlameGaussianModel(GaussianModel):
 
             self.flame_param = flame_param
             self.num_timesteps = self.flame_param['expr'].shape[0]  # required by viewers
-        
+        # 运动序列数据，应该是给blend shape用的
         if 'motion_path' in kwargs and kwargs['motion_path'] is not None:
             # When there is a motion sequence specified, load only dynamic parameters.
             motion_path = Path(kwargs['motion_path'])
@@ -249,7 +253,7 @@ class FlameGaussianModel(GaussianModel):
             self.flame_param['eyes_pose'] = flame_param['eyes_pose']
             self.flame_param['expr'] = flame_param['expr']
             self.num_timesteps = self.flame_param['expr'].shape[0]  # required by viewers
-        
+        # ignore disable_fid的存在允许了load_ply函数的使用者灵活地指定哪些面部数据应该被排除在外。隐私保护
         if 'disable_fid' in kwargs and len(kwargs['disable_fid']) > 0:
             mask = (self.binding[:, None] != kwargs['disable_fid'][None, :]).all(-1)
 
